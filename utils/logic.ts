@@ -443,11 +443,66 @@ export const processDatasets = (
         if(m.personalEmail) masterMap.set(cleanString(m.personalEmail), m);
     });
 
+    // --- PHASE 1: INTRA-PLATFORM DUPLICATES (Same Email within same platform) ---
+    
+    // Check Talent for duplicates
+    const talentByEmail = new Map<string, RawUser[]>();
+    talentUsers.forEach(u => {
+        if (!talentByEmail.has(u.email)) {
+            talentByEmail.set(u.email, []);
+        }
+        talentByEmail.get(u.email)!.push(u);
+    });
+
+    talentByEmail.forEach((users, email) => {
+        if (users.length > 1) {
+            // Multiple entries for same email in Talent
+            for (let i = 1; i < users.length; i++) {
+                duplicates.push(
+                    generateDuplicateRecord(
+                        users[0], 
+                        users[i], 
+                        masterMap, 
+                        'Intra-Talent', 
+                        'Exact Email (Same Sheet)', 
+                        100
+                    )
+                );
+            }
+        }
+    });
+
+    // Check Pharmacy for duplicates
+    const pharmByEmail = new Map<string, RawUser[]>();
+    pharmUsers.forEach(u => {
+        if (!pharmByEmail.has(u.email)) {
+            pharmByEmail.set(u.email, []);
+        }
+        pharmByEmail.get(u.email)!.push(u);
+    });
+
+    pharmByEmail.forEach((users, email) => {
+        if (users.length > 1) {
+            // Multiple entries for same email in Pharmacy
+            for (let i = 1; i < users.length; i++) {
+                duplicates.push(
+                    generateDuplicateRecord(
+                        users[0], 
+                        users[i], 
+                        masterMap, 
+                        'Intra-Pharmacy', 
+                        'Exact Email (Same Sheet)', 
+                        100
+                    )
+                );
+            }
+        }
+    });
+
+    // --- PHASE 2: INTER-PLATFORM DUPLICATES (Same Email across platforms) ---
     const pharmMap = new Map<string, RawUser>();
     pharmUsers.forEach(u => pharmMap.set(u.email, u));
 
-    // 1. Inter-Platform Check (Talent vs Pharmacy)
-    // "Calculate that a person is a duplicate if their email in the raw data of one platform is repeated in the second sheet"
     talentUsers.forEach(tUser => {
         const pUser = pharmMap.get(tUser.email);
         
