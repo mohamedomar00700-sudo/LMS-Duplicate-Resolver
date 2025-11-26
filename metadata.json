@@ -1,0 +1,5 @@
+{
+  "name": "LMS Duplicate Resolver",
+  "description": "Intelligent data processing assistant for detecting, analyzing, and resolving duplicate LMS user accounts across multiple platforms using fuzzy logic and Gemini AI.",
+  "requestFramePermissions": []
+}
