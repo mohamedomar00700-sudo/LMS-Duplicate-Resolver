@@ -45,20 +45,13 @@
         box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
       }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
-    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/package/xlsx.mjs"
-  }
-}
-</script>
-</head>
+    <!-- Removed importmap so Vite will bundle dependencies for production builds. -->
+    <link rel="stylesheet" href="index.css">
+  </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
+    <script type="module" src="index.tsx"></script>
+  </body>
+</html>
   </body>
 </html>
