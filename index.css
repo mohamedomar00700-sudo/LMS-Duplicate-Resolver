@@ -1,0 +1,17 @@
+/* Minimal stylesheet so production build includes a CSS asset and avoids 404 for index.css */
+/* You can replace this with Tailwind or your preferred styles later */
+html, body {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+body {
+  font-family: 'Outfit', sans-serif;
+  background-color: #0f172a;
+  color: #f8fafc;
+}
+
+/* keep monospace class used in app */
+.font-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
