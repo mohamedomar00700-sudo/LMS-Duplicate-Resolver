@@ -55,3 +55,6 @@ git push origin main
 3. The included GitHub Actions workflow (`.github/workflows/pages.yml`) will build the app and publish the `dist/` folder to GitHub Pages automatically.
 
 If you use a different repository name, update the `base` option in `vite.config.ts` to `'/your-repo-name/'` and push again.
+
+<!-- Auto-update marker: trigger GitHub Actions -->
+Last action trigger: 2025-11-26T13:00:00Z
