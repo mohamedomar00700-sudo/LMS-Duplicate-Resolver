@@ -331,6 +331,39 @@ export const parseCSV = (content: string, platform: 'Talent' | 'Pharmacy' | 'Mas
 
 // --- Core Logic ---
 
+// Merge multiple users with same email into ONE consolidated user
+const mergeUsersWithSameEmail = (users: RawUser[]): RawUser => {
+    if (users.length === 0) throw new Error("Cannot merge empty user list");
+    if (users.length === 1) return users[0];
+    
+    // Take data from first user (name, phone, etc.)
+    const merged: RawUser = {
+        ...users[0],
+        // Merge all completed courses from ALL users
+        completedCourseNames: []
+    };
+    
+    // Collect ALL unique courses from all user entries
+    const courseSet = new Set<string>();
+    users.forEach(u => {
+        u.completedCourseNames.forEach(course => {
+            courseSet.add(cleanString(course)); // normalized
+        });
+    });
+    
+    // Add all unique courses to the merged user
+    merged.completedCourseNames = Array.from(courseSet).map(normalized => {
+        // Find the original course name (non-normalized) from any user
+        for (const user of users) {
+            const original = user.completedCourseNames.find(c => cleanString(c) === normalized);
+            if (original) return original;
+        }
+        return normalized;
+    });
+    
+    return merged;
+};
+
 const generateDuplicateRecord = (
     userA: RawUser, 
     userB: RawUser, 
@@ -443,9 +476,9 @@ export const processDatasets = (
         if(m.personalEmail) masterMap.set(cleanString(m.personalEmail), m);
     });
 
-    // --- PHASE 1: INTRA-PLATFORM DUPLICATES (Same Email within same platform) ---
+    // --- PHASE 0: CONSOLIDATE USERS (Merge same email within same platform) ---
     
-    // Check Talent for duplicates
+    // Consolidate Talent Users
     const talentByEmail = new Map<string, RawUser[]>();
     talentUsers.forEach(u => {
         if (!talentByEmail.has(u.email)) {
@@ -453,26 +486,18 @@ export const processDatasets = (
         }
         talentByEmail.get(u.email)!.push(u);
     });
-
+    
+    const consolidatedTalentUsers: RawUser[] = [];
     talentByEmail.forEach((users, email) => {
         if (users.length > 1) {
-            // Multiple entries for same email in Talent
-            for (let i = 1; i < users.length; i++) {
-                duplicates.push(
-                    generateDuplicateRecord(
-                        users[0], 
-                        users[i], 
-                        masterMap, 
-                        'Intra-Talent', 
-                        'Exact Email (Same Sheet)', 
-                        100
-                    )
-                );
-            }
+            // Merge multiple rows with same email into ONE
+            consolidatedTalentUsers.push(mergeUsersWithSameEmail(users));
+        } else {
+            consolidatedTalentUsers.push(users[0]);
         }
     });
 
-    // Check Pharmacy for duplicates
+    // Consolidate Pharmacy Users
     const pharmByEmail = new Map<string, RawUser[]>();
     pharmUsers.forEach(u => {
         if (!pharmByEmail.has(u.email)) {
@@ -480,30 +505,22 @@ export const processDatasets = (
         }
         pharmByEmail.get(u.email)!.push(u);
     });
-
+    
+    const consolidatedPharmUsers: RawUser[] = [];
     pharmByEmail.forEach((users, email) => {
         if (users.length > 1) {
-            // Multiple entries for same email in Pharmacy
-            for (let i = 1; i < users.length; i++) {
-                duplicates.push(
-                    generateDuplicateRecord(
-                        users[0], 
-                        users[i], 
-                        masterMap, 
-                        'Intra-Pharmacy', 
-                        'Exact Email (Same Sheet)', 
-                        100
-                    )
-                );
-            }
+            // Merge multiple rows with same email into ONE
+            consolidatedPharmUsers.push(mergeUsersWithSameEmail(users));
+        } else {
+            consolidatedPharmUsers.push(users[0]);
         }
     });
 
-    // --- PHASE 2: INTER-PLATFORM DUPLICATES (Same Email across platforms) ---
+    // --- PHASE 1: INTER-PLATFORM DUPLICATES (Consolidated users) ---
     const pharmMap = new Map<string, RawUser>();
-    pharmUsers.forEach(u => pharmMap.set(u.email, u));
+    consolidatedPharmUsers.forEach(u => pharmMap.set(u.email, u));
 
-    talentUsers.forEach(tUser => {
+    consolidatedTalentUsers.forEach(tUser => {
         const pUser = pharmMap.get(tUser.email);
         
         if (pUser) {
